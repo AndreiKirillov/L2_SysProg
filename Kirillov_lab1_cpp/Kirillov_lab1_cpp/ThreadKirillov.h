@@ -1,7 +1,7 @@
 #pragma once
 #include "framework.h"
 
-//  ласс, позвол€ющий работать с потоком, хранит идентификатор, хэндл потока и хэндл управл€ющего событи€,
+//  ласс, представл€ющий обЄртку вокруг потока дл€ работы с ним, хранит идентификатор, хэндл потока и хэндл управл€ющего событи€,
 // которое управл€ет поведением потока
 class ThreadKirillov
 {
@@ -13,7 +13,12 @@ public:
 	ThreadKirillov();
 	~ThreadKirillov();
 
-	bool Create(AFX_THREADPROC thread_function, LPVOID param);
+	void SetID(int id);
+	void SetControlEvent(const HANDLE& event);
+	
+	bool Create(AFX_THREADPROC thread_function, ParamsToThread&& param);
+	//bool Create(AFX_THREADPROC thread_function);
+	
 
 };
 

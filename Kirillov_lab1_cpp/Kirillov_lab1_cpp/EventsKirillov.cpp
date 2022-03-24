@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "EventsKirillov.h"
 
-EventsKirillov::EventsKirillov(): _threads(0),_events(), _count(0)
+EventsKirillov::EventsKirillov(): _events(), _count(0)
 {
 }
 

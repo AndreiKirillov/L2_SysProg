@@ -33,10 +33,6 @@ namespace Kirillov_lab1_sharp
             InitializeComponent();
             Thread th = new Thread(WaitForChildExit);
         }
-        bool createNthreads()
-        {
-            return true;
-        }
 
         private void btn_start_Click(object sender, EventArgs e)
         {
@@ -44,7 +40,7 @@ namespace Kirillov_lab1_sharp
             {
                 listbox_threads.Items.Clear();
                 count = 0;
-                child_process = Process.Start("C://repository/SysProg/Kirillov_lab1_sharp/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
+                child_process = Process.Start("C://repository/SysProg/L2_SysProg/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
                 listbox_threads.Items.Add("Все потоки");
                 listbox_threads.Items.Add("Главный поток");
                 if (confirmEvent.WaitOne())
@@ -106,7 +102,8 @@ namespace Kirillov_lab1_sharp
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             closeProgrammEvent.Set();
-            child_process.Close();
+            if(child_process != null)
+                child_process.Close();
         }
     }
 }

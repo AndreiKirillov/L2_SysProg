@@ -6,7 +6,6 @@ using namespace std;
 class EventsKirillov   //Класс для хранения о обработки событий(объектов ядра)
 {
 private:
-	vector<HANDLE> _threads;
 	stack<HANDLE, list<HANDLE>> _events;
 	int _count;
 public:

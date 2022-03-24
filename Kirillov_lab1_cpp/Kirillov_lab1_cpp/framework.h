@@ -25,6 +25,7 @@
 #include <vector>
 #include <list>
 #include <stack>
+#include <memory>
 
 
 struct ParamsToThread

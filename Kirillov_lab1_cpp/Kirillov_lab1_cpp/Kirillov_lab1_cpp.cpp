@@ -5,6 +5,8 @@
 #include "framework.h"
 #include "Kirillov_lab1_cpp.h"
 #include "EventsKirillov.h"
+#include "ThreadKirillov.h"
+#include "ThreadStorage.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,11 +21,11 @@ using namespace std;
 
 UINT ThreadFunction(LPVOID param)     // Функция для выполнения в потоке
 {
-    EventsKirillov* event = static_cast<EventsKirillov*>(param);
-    string n = to_string(event->GetCount());
+    ParamsToThread* p = static_cast<ParamsToThread*>(param);
+    string n = to_string(p->id);
 
     cout << "Thread №" + n + " START" << endl;
-    WaitForSingleObject(event->GetLastEvent(), INFINITE);     // Ждём сигнал от события
+    WaitForSingleObject(p->control_event, INFINITE);     // Ждём сигнал от события
     cout << "Thread №" + n + " CLOSE" << endl;
     return 0;
 }
@@ -72,21 +74,28 @@ int main()
             HANDLE hControlEvents[3] = { create_thread_event, close_thread_event, close_programm_event };
 
             EventsKirillov events;      // события для потоков
+            ThreadStorage storage;
             SetEvent(confirm_event);   // подтвердение запуска приложения
 
             while (true)
             {
                 //int event_index = WaitForMultipleObjects(3, hControlEvents, FALSE, INFINITE) - WAIT_OBJECT_0; // Ждём событие от 
-                        
-                // главной программы
-                int event_index = WaitForMultipleObjects(3, hControlEvents, FALSE, INFINITE) - WAIT_OBJECT_0;
-                switch (event_index)
+                                                                                                              // главной программы
+                int a;
+                cin >> a;
+                switch (a)//event_index)
                 {
                 case 0:         // Событие создания потока
                 {
                     events.CreateNewEvent();
-
-                    HANDLE new_thread = AfxBeginThread(ThreadFunction, &events)->m_hThread;
+                    ThreadKirillov t;
+                    ParamsToThread p;
+                    p.id = events.GetCount();
+                    p.control_event = events.GetLastEvent();
+                    storage.CreateNewThread(ThreadFunction, std::move(p));
+                   /* t.Create(ThreadFunction, std::move(&p));
+                    storage.emplace_back(std::move(t));*/
+                    //HANDLE new_thread = AfxBeginThread(ThreadFunction, &p)->m_hThread;
                     //CreateThread(NULL, 0, ThreadFunction, &events, 0, NULL);
                     SetEvent(confirm_event);
                 }
