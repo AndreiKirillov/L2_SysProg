@@ -21,6 +21,7 @@ namespace Kirillov_lab1_sharp
         private System.Threading.EventWaitHandle startEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "CreateNewThread");
         private System.Threading.EventWaitHandle confirmEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "ConfirmEvent");
         private System.Threading.EventWaitHandle closeProgrammEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "CloseProgrammEvent");
+        private System.Threading.EventWaitHandle messageEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "SendMessage");
 
         public Form1()
         {
@@ -33,6 +34,12 @@ namespace Kirillov_lab1_sharp
             {
                 listbox_threads.Items.Clear();
                 count = 0;
+                if (textBox_Nthreads.TextLength == 0)
+                {
+                    MessageBox.Show("Внимание! Задайте количество создаваемых потоков!");
+                    return;
+                }
+
                 child_process = Process.Start("C:/repository/SysProg/L2_SysProg/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
                 listbox_threads.Items.Add("Все потоки");
                 listbox_threads.Items.Add("Главный поток");
@@ -51,6 +58,11 @@ namespace Kirillov_lab1_sharp
             }
             else
             {
+                if (textBox_Nthreads.TextLength == 0)
+                {
+                    MessageBox.Show("Внимание! Задайте количество создаваемых потоков!");
+                    return;
+                }
                 int nThreads = Convert.ToInt32(textBox_Nthreads.Text);
                 if (nThreads > 0)
                 {
@@ -96,11 +108,32 @@ namespace Kirillov_lab1_sharp
             }
         }
 
+        private void btn_send_Click(object sender, EventArgs e)
+        {
+            if (child_process != null)
+            {
+                if (textBox_Message.TextLength == 0)
+                {
+                    MessageBox.Show("Внимание! Напишите текст сообщения!");
+                    return;
+                }
+
+                messageEvent.Set();
+
+                confirmEvent.WaitOne();
+            }
+            else
+            {
+                MessageBox.Show("Ошибка! Дочерняя программа не запущена!");
+            }
+        }
+
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             closeProgrammEvent.Set();
             if(child_process != null)
                 child_process.Close();
         }
+
     }
 }

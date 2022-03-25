@@ -25,10 +25,33 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
     string n = to_string(p->id);
 
     cout << "Thread №" + n + " START" << endl;
-    WaitForSingleObject(p->control_event, INFINITE);     // Ждём сигнал от события
-    cout << "Thread №" + n + " CLOSE" << endl;
-    
-    return 0;
+    HANDLE hControlEvents[2] = {p->receive_msg_event, p->control_event};
+
+    while (true)
+    {
+        int event_index = WaitForMultipleObjects(2, hControlEvents, FALSE, INFINITE);     // Ждём сигнал от события
+        switch (event_index)
+        {
+        case 0:// событие отправки сообщения
+        {
+            cout << "Thread №" + n + " RECEIVED Message" << endl;
+            ofstream outfile;
+            outfile.open("C:/repository/SysProg/L2_SysProg/OutputData/" + n + ".txt");
+            if (outfile.is_open())
+            {
+                outfile << n + " Test Message";
+                outfile.close();
+            }
+        }
+        break;
+
+        case 1: // событие завершения потока
+        {
+            cout << "Thread №" + n + " CLOSE" << endl;
+            return 0;
+        }
+        }
+    }
 }
 
 void CloseAllObjects(list<HANDLE> handles)    // Освобождение русурсов всех объектов ядра
@@ -72,12 +95,13 @@ int main()
             HANDLE close_programm_event = CreateEventA(NULL, FALSE, FALSE, "CloseProgrammEvent");
             kernel_objects.push_back(close_programm_event);
 
+            HANDLE message_event = CreateEventA(NULL, FALSE, FALSE, "SendMessage");
+            kernel_objects.push_back(message_event);
+
             HANDLE error_event = CreateEventA(NULL, FALSE, FALSE, "ErrorEvent");
             kernel_objects.push_back(error_event);
 
-            HANDLE hMutex = CreateMutexA(NULL, FALSE, "MyMutex");
-
-            HANDLE hControlEvents[3] = { create_thread_event, close_thread_event, close_programm_event };
+            HANDLE hControlEvents[4] = { create_thread_event, close_thread_event, message_event, close_programm_event };
 
             EventsKirillov events;      // события для потоков
             ThreadStorage storage;
@@ -85,7 +109,7 @@ int main()
 
             while (true)
             {
-                int event_index = WaitForMultipleObjects(3, hControlEvents, FALSE, INFINITE) - WAIT_OBJECT_0; // Ждём событие от 
+                int event_index = WaitForMultipleObjects(4, hControlEvents, FALSE, INFINITE) - WAIT_OBJECT_0; // Ждём событие от 
                                                                                                               // главной программы
                 switch (event_index)
                 {
@@ -96,7 +120,8 @@ int main()
                     ParamsToThread p;
                     p.id = storage.GetCount() + 1;
                     p.control_event = CreateEventA(NULL, FALSE, FALSE, NULL);
-                    if (p.control_event == NULL)
+                    p.receive_msg_event = CreateEventA(NULL, FALSE, FALSE, NULL);
+                    if (p.control_event == NULL || p.receive_msg_event == NULL)
                     {
                         SetEvent(error_event);
                         break;
@@ -117,25 +142,34 @@ int main()
                 {
                     if (storage.GetCount() > 0)
                     {
-                        storage.ActivateLastThread();
+                        storage.FinishLastThread();
                         storage.DeleteLastThread();
                         SetEvent(confirm_event);
                     }
                     else      // Освобождаем все ресурсы, если нет активных потоков
                     {
                         SetEvent(close_programm_event);
+                        storage.DeleteAll();
                         CloseAllObjects(kernel_objects);
-
                         return 0;
                     }
                 }
                 break;
 
-                case 2:      // Закрытие программы
+                case 2:
+                {
+                    storage.ActionLastThread();
+                    SetEvent(confirm_event);
+                }
+                break;
+
+                case 3:      // Закрытие программы
                 {
                     SetEvent(close_programm_event);
+                    storage.DeleteAll();
                     CloseAllObjects(kernel_objects);
-
+                    /*int d;
+                    cin >> d;*/
                     return 0;
                 }
                 }

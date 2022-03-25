@@ -9,6 +9,7 @@ private:
 	int _id;
 	HANDLE _thread;
 	HANDLE _control_event;
+	HANDLE _receive_msg_event;
 public:
 	ThreadKirillov();
 	~ThreadKirillov();
@@ -17,6 +18,8 @@ public:
 	
 	bool Create(AFX_THREADPROC thread_function, ParamsToThread&& param);
 	void SetActive();
+
+	void ReceiveMessage();
 
 	//bool Create(AFX_THREADPROC thread_function);
 	

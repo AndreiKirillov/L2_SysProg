@@ -8,7 +8,7 @@ class ThreadStorage
 private:
 	std::vector<std::unique_ptr<ThreadKirillov>> _threads;
 
-	std::vector<std::unique_ptr<ThreadKirillov>> _activated_threads;
+	std::vector<std::unique_ptr<ThreadKirillov>> _finished_threads;
 public:
 	ThreadStorage();
 
@@ -16,11 +16,12 @@ public:
 
 	void AddThread(std::unique_ptr<ThreadKirillov>&& somethread);
 
-	void ActivateLastThread();
+	void FinishLastThread();
 
 	void DeleteLastThread();
+	void DeleteAll();
 
-	//void CreateNewThread(AFX_THREADPROC thread_function, ParamsToThread& param);
+	void ActionLastThread();
 
 };
 
