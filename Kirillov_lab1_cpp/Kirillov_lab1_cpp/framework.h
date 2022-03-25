@@ -27,7 +27,6 @@
 #include <stack>
 #include <memory>
 
-
 struct ParamsToThread
 {
 	int id;

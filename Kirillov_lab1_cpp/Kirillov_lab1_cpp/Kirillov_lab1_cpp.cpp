@@ -27,6 +27,7 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
     cout << "Thread №" + n + " START" << endl;
     WaitForSingleObject(p->control_event, INFINITE);     // Ждём сигнал от события
     cout << "Thread №" + n + " CLOSE" << endl;
+    
     return 0;
 }
 
@@ -71,6 +72,11 @@ int main()
             HANDLE close_programm_event = CreateEventA(NULL, FALSE, FALSE, "CloseProgrammEvent");
             kernel_objects.push_back(close_programm_event);
 
+            HANDLE error_event = CreateEventA(NULL, FALSE, FALSE, "ErrorEvent");
+            kernel_objects.push_back(error_event);
+
+            HANDLE hMutex = CreateMutexA(NULL, FALSE, "MyMutex");
+
             HANDLE hControlEvents[3] = { create_thread_event, close_thread_event, close_programm_event };
 
             EventsKirillov events;      // события для потоков
@@ -79,34 +85,40 @@ int main()
 
             while (true)
             {
-                //int event_index = WaitForMultipleObjects(3, hControlEvents, FALSE, INFINITE) - WAIT_OBJECT_0; // Ждём событие от 
+                int event_index = WaitForMultipleObjects(3, hControlEvents, FALSE, INFINITE) - WAIT_OBJECT_0; // Ждём событие от 
                                                                                                               // главной программы
-                int a;
-                cin >> a;
-                switch (a)//event_index)
+                switch (event_index)
                 {
                 case 0:         // Событие создания потока
                 {
-                    events.CreateNewEvent();
-                    ThreadKirillov t;
+                    std::unique_ptr<ThreadKirillov> t = std::make_unique<ThreadKirillov>();
+                    
                     ParamsToThread p;
-                    p.id = events.GetCount();
-                    p.control_event = events.GetLastEvent();
-                    storage.CreateNewThread(ThreadFunction, std::move(p));
-                   /* t.Create(ThreadFunction, std::move(&p));
-                    storage.emplace_back(std::move(t));*/
-                    //HANDLE new_thread = AfxBeginThread(ThreadFunction, &p)->m_hThread;
-                    //CreateThread(NULL, 0, ThreadFunction, &events, 0, NULL);
+                    p.id = storage.GetCount() + 1;
+                    p.control_event = CreateEventA(NULL, FALSE, FALSE, NULL);
+                    if (p.control_event == NULL)
+                    {
+                        SetEvent(error_event);
+                        break;
+                    }
+
+                    if (!t->Create(ThreadFunction, std::move(p)))
+                    {
+                        SetEvent(error_event);
+                        break;
+                    }
+                    
+                    storage.AddThread(std::move(t));
                     SetEvent(confirm_event);
                 }
                 break;
 
                 case 1:              // Событие завершения потока
                 {
-                    if (events.GetCount() > 0)
+                    if (storage.GetCount() > 0)
                     {
-                        events.SetLastEvent();
-                        events.DeleteLastEvent();
+                        storage.ActivateLastThread();
+                        storage.DeleteLastThread();
                         SetEvent(confirm_event);
                     }
                     else      // Освобождаем все ресурсы, если нет активных потоков

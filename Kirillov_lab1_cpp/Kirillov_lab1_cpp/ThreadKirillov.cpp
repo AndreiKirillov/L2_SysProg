@@ -5,12 +5,13 @@ ThreadKirillov::ThreadKirillov(): _id(0), _thread(nullptr), _control_event(nullp
 {
 }
 
-ThreadKirillov::~ThreadKirillov()
+ThreadKirillov::~ThreadKirillov() // В деструкторе освобождаем ресурсы потока
 {
-	/*if(_thread != nullptr)
-		CloseHandle(_thread);
+	std::cout << "DESTRUCTOR" << std::endl;
+	/*if(_thread != NULL)        
+		CloseHandle(_thread);*/
 	if(_control_event != nullptr)
-		CloseHandle(_control_event);*/
+		CloseHandle(_control_event);
 }
 
 void ThreadKirillov::SetID(int id)
@@ -18,19 +19,26 @@ void ThreadKirillov::SetID(int id)
 	_id = id;
 }
 
-void ThreadKirillov::SetControlEvent(const HANDLE& event)
-{
-	_control_event = event;
-}
-
+// Функция создания потока, возвращает false при некорректной работе
 bool ThreadKirillov::Create(AFX_THREADPROC thread_function, ParamsToThread&& param)
 {
+	if (param.id == 0 || param.control_event == NULL)
+		return false;
 	_id = param.id;
 	_control_event = param.control_event;
 	
-	_thread = AfxBeginThread(thread_function, std::move(&param))->m_hThread;
+	CWinThread* new_thread = AfxBeginThread(thread_function, std::move(&param));
+	if (new_thread == NULL)
+		return false;
+	_thread = new_thread->m_hThread;
 
 	return true;
+}
+
+void ThreadKirillov::SetActive() // Посылает сигнал для активизации потока
+{
+	if(_control_event != nullptr)
+		SetEvent(_control_event);
 }
 
 //bool ThreadKirillov::Create(AFX_THREADPROC thread_function)

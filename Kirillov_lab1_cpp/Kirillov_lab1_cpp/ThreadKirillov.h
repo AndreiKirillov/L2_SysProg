@@ -14,9 +14,10 @@ public:
 	~ThreadKirillov();
 
 	void SetID(int id);
-	void SetControlEvent(const HANDLE& event);
 	
 	bool Create(AFX_THREADPROC thread_function, ParamsToThread&& param);
+	void SetActive();
+
 	//bool Create(AFX_THREADPROC thread_function);
 	
 

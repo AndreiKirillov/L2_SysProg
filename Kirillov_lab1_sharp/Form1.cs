@@ -14,12 +14,6 @@ namespace Kirillov_lab1_sharp
 {
     public partial class Form1 : Form
     {
-        private void WaitForChildExit()
-        {
-            System.Threading.EventWaitHandle user_close_programm = new EventWaitHandle(false, EventResetMode.AutoReset, "UserCloseProgramm");
-            user_close_programm.WaitOne();
-            listbox_threads.Items.Clear();
-        }
 
         private Process child_process = null;
         private int count = 0;
@@ -31,7 +25,6 @@ namespace Kirillov_lab1_sharp
         public Form1()
         {
             InitializeComponent();
-            Thread th = new Thread(WaitForChildExit);
         }
 
         private void btn_start_Click(object sender, EventArgs e)
@@ -40,29 +33,33 @@ namespace Kirillov_lab1_sharp
             {
                 listbox_threads.Items.Clear();
                 count = 0;
-                child_process = Process.Start("C://repository/SysProg/L2_SysProg/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
+                child_process = Process.Start("C:/repository/SysProg/L2_SysProg/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
                 listbox_threads.Items.Add("Все потоки");
                 listbox_threads.Items.Add("Главный поток");
+                int nThreads = Convert.ToInt32(textBox_Nthreads.Text);
                 if (confirmEvent.WaitOne())
-                    if (Convert.ToInt32(textBox_Nthreads.Text) > 0)
+                    if (nThreads > 0)
                     {
-                        for (int i = 1; i <= Convert.ToInt32(textBox_Nthreads.Text); i++)
+                        for (int i = 0; i < nThreads; i++)
                         {
+                            Thread.Sleep(100);   // небольшая задержка, иначе потоки не могут нормально инициализироваться
                             startEvent.Set();
-                            if (confirmEvent.WaitOne())
+                            if(confirmEvent.WaitOne(-1))
                                 listbox_threads.Items.Add($"{++count}-й поток");
                         }
                     }
             }
             else
             {
-                if (Convert.ToInt32(textBox_Nthreads.Text) > 0)
+                int nThreads = Convert.ToInt32(textBox_Nthreads.Text);
+                if (nThreads > 0)
                 {
-                    for (int i = 1; i <= Convert.ToInt32(textBox_Nthreads.Text); i++)
+                    for (int i = 0; i < nThreads; i++)
                     {
+                        Thread.Sleep(100);
                         startEvent.Set();
-                        if (confirmEvent.WaitOne())
-                            listbox_threads.Items.Add($"{++count}-й поток");
+                        confirmEvent.WaitOne();
+                        listbox_threads.Items.Add($"{++count}-й поток");
                     }
                 }
             }
