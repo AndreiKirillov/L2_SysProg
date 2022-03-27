@@ -158,7 +158,8 @@ int main()
 
                 case 2:
                 {
-                    storage.ActionLastThread();
+                    //storage.ActionLastThread();
+                    storage.ActionThreadByID(5);
                     SetEvent(confirm_event);
                 }
                 break;

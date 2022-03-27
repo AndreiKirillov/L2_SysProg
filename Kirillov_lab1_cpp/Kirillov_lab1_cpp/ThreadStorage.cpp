@@ -35,6 +35,14 @@ void ThreadStorage::DeleteAll()   // очищает все потоки, у них отрабатывает дест
 	_finished_threads.clear();
 }
 
+void ThreadStorage::ActionThreadByID(int id)
+{
+	auto t = find_if(_threads.begin(), _threads.end(), [&](auto& some_thread) {return some_thread->GetID() == id; });
+
+	if (t != _threads.end())
+		t->get()->ReceiveMessage();
+}
+
 void ThreadStorage::ActionLastThread()
 {
 	if (_threads.size() > 0)

@@ -19,6 +19,11 @@ void ThreadKirillov::SetID(int id)
 	_id = id;
 }
 
+int ThreadKirillov::GetID()
+{
+	return _id;
+}
+
 // Функция создания потока, возвращает false при некорректной работе
 bool ThreadKirillov::Create(AFX_THREADPROC thread_function, ParamsToThread&& param)
 {
