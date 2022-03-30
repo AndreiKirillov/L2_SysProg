@@ -82,18 +82,17 @@ HANDLE hFileMap;
 
 extern "C"
 {
-	__declspec(dllexport) bool __stdcall CreateMappingFile(const char* filename)
+	__declspec(dllexport) bool __stdcall CreateMappingFile()
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		//header h = { addr, strlen(str) + 1 };
-		hFile = CreateFileA((LPCSTR)filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
+		hFile = CreateFileA("myfile.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
 		if (hFile == INVALID_HANDLE_VALUE)
 			return false;
 
 		return true;
 	}
 
-	__declspec(dllexport) bool __stdcall SendMappingMessage(const char* message, header& h)
+	__declspec(dllexport) bool __stdcall SendMappingMessage(void* message, header& h)
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
 		hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);

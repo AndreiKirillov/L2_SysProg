@@ -23,8 +23,8 @@ struct header
 
 extern "C"
 {
-    __declspec(dllimport) bool __stdcall CreateMappingFile(const char* filename);
-    __declspec(dllimport) bool __stdcall SendMappingMessage(const char* message, header& h);
+    __declspec(dllimport) bool __stdcall CreateMappingFile();//const char* filename);
+    __declspec(dllimport) bool __stdcall SendMappingMessage(void* message, header& h);
     __declspec(dllimport) char* __stdcall ReadMessage(header& h);
    // __declspec(dllimport) bool __stdcall SendMappingMessage(std::string& message, header& h);
     //__declspec(dllimport) void __stdcall ReadMessage(std::string& message, header& h);
@@ -99,7 +99,7 @@ int main()
         else
         {
             setlocale(LC_ALL, "Russian");
-            if (!CreateMappingFile("myfile.dat"))
+            /*if (!CreateMappingFile("myfile.dat"))
                 cout << "Не удалось создать mapping file" << endl;
             const char* message = "testing mapping message";
             header h{ 7, strlen(message)+1 };
@@ -109,7 +109,7 @@ int main()
             header newheader;
             char* received = ReadMessage(newheader);
             cout << received << newheader.thread_id << endl;
-            CloseFileMapping;
+            CloseFileMapping;*/
            /* if (!CreateMappingFile("myfile.dat"))
                 cout << "Не удалось создать mapping file" << endl;
             std::string message = "testing mapping message";
@@ -203,11 +203,11 @@ int main()
                 case 2:
                 {
                     //storage.ActionLastThread();
-                   /* std::string received_message;
+                    //std::string received_message;
                     header h;
-                    bool b=CreateMappingFile("myfile.dat");
-                    ReadMessage(received_message, h);
-                    cout << "Thread id = " << h.thread_id << ", message: " << received_message << endl;*/
+                    CreateMappingFile();//"myfile.dat");
+                    char* received_msg = ReadMessage(h);
+                    cout << "Thread id = " << h.thread_id << ", message: " << received_msg << endl;
                     //storage.ActionThreadByID(5);
                     SetEvent(confirm_event);
                 }

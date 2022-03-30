@@ -25,16 +25,16 @@ namespace Kirillov_lab1_sharp
 
     public partial class Form1 : Form
     {
-        [DllImport("FileMapping.dll", EntryPoint = "CreateMappingFile", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern bool CreateMappingFile(string filename);
+        [DllImport("FileMapping.dll", SetLastError = true, EntryPoint = "_CreateMappingFile@0", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
+        private static extern bool CreateMappingFile();//StringBuilder filename);
+       
+        [DllImport("FileMapping.dll", EntryPoint = "_SendMappingMessage@8", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
+        unsafe private static extern bool SendMappingMessage(IntPtr message, ref header h);
+        
+        [DllImport("FileMapping.dll", EntryPoint = "_ReadMessage@4", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
+        private static extern StringBuilder ReadMessage(ref header h);
 
-        [DllImport("FileMapping.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern bool SendMappingMessage(ref string message, ref header h);
-
-        [DllImport("FileMapping.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern void ReadMessage(ref string message, ref header h);
-
-        [DllImport("FileMapping.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("FileMapping.dll", EntryPoint = "_CloseFileMapping@0", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
         private static extern void CloseFileMapping();
 
 
@@ -50,6 +50,12 @@ namespace Kirillov_lab1_sharp
         public Form1()
         {
             InitializeComponent();
+            //CreateMappingFile();
+            //IntPtr message = Marshal.StringToHGlobalAnsi("Fuckin message");
+            //header h = new header();
+            //h.thread_id = 5;
+            //h.message_size = message.ToString().Length;
+            //SendMappingMessage(message, ref h);
         }
 
         private void btn_start_Click(object sender, EventArgs e)
@@ -141,18 +147,39 @@ namespace Kirillov_lab1_sharp
                     MessageBox.Show("Внимание! Напишите текст сообщения!");
                     return;
                 }
-                //StringBuilder filename = new StringBuilder("myfile.dat");
-                if (!CreateMappingFile("myfile.dat"))
+                var filename = new StringBuilder("myfile.dat");
+
+                //CreateMappingFile(filename);
+                if (!CreateMappingFile())//filename))
                 {
                     MessageBox.Show("Внимание! Не удалось открыть файл для передачи сообщения!");
                     return;
                 }
-                //string message = textBox_Message.Text;
-                string message = textBox_Message.Text;
+                //unsafe
+                //{
+                //    void* msg;
+                //    IntPtr message = Marshal.StringToHGlobalAnsi("Fuckin message");
+                //    //IntPtr message = new StringBuilder(textBox_Message.Text);
+                //    header h = new header();
+                //    h.thread_id = listbox_threads.SelectedIndex - 1;
+                //    h.message_size = message.ToString().Length;
+                //    msg = message.ToPointer();
+
+                //    if (!SendMappingMessage(msg, ref h))
+                //    {
+                //        CloseFileMapping();
+                //        MessageBox.Show("Внимание! Не удалось отправить сообщения!");
+                //        return;
+                //    }
+                //}
+
+                IntPtr message = Marshal.StringToHGlobalAnsi("messageffffffffffffff");
+                //StringBuilder message = new StringBuilder(textBox_Message.Text);
                 header h = new header();
                 h.thread_id = listbox_threads.SelectedIndex - 1;
-                h.message_size = message.Length;
-                if(!SendMappingMessage(ref message, ref h))
+                h.message_size = message.ToString().Length;
+
+                if (!SendMappingMessage(message, ref h))
                 {
                     CloseFileMapping();
                     MessageBox.Show("Внимание! Не удалось отправить сообщения!");
