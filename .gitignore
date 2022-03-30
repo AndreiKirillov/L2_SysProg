@@ -26,3 +26,4 @@ Kirillov_lab1_cpp/.vs/Kirillov_lab1_cpp/v16/.suo
 *.csproj
 Kirillov_lab1_sharp/obj/Debug/.NETFramework,Version=v4.7.2.AssemblyAttributes.cs
 *.settings
+*.dat

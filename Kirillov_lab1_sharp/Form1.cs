@@ -9,11 +9,35 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Kirillov_lab1_sharp
 {
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct header
+    {
+        [MarshalAs(UnmanagedType.I4)]
+        public int thread_id;
+        [MarshalAs(UnmanagedType.I4)]
+        public int message_size;
+    };
+
     public partial class Form1 : Form
     {
+        [DllImport("FileMapping.dll", EntryPoint = "CreateMappingFile", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern bool CreateMappingFile(string filename);
+
+        [DllImport("FileMapping.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern bool SendMappingMessage(ref string message, ref header h);
+
+        [DllImport("FileMapping.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern void ReadMessage(ref string message, ref header h);
+
+        [DllImport("FileMapping.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern void CloseFileMapping();
+
+
 
         private Process child_process = null;
         private int count = 0;
@@ -40,7 +64,7 @@ namespace Kirillov_lab1_sharp
                     return;
                 }
 
-                child_process = Process.Start("C:/repository/SysProg/L2_SysProg/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
+                child_process = Process.Start("C:/repository/SysProg/L2_SysProg/Debug/Kirillov_lab1_cpp.exe");
                 listbox_threads.Items.Add("Все потоки");
                 listbox_threads.Items.Add("Главный поток");
                 int nThreads = Convert.ToInt32(textBox_Nthreads.Text);
@@ -115,6 +139,23 @@ namespace Kirillov_lab1_sharp
                 if (textBox_Message.TextLength == 0)
                 {
                     MessageBox.Show("Внимание! Напишите текст сообщения!");
+                    return;
+                }
+                //StringBuilder filename = new StringBuilder("myfile.dat");
+                if (!CreateMappingFile("myfile.dat"))
+                {
+                    MessageBox.Show("Внимание! Не удалось открыть файл для передачи сообщения!");
+                    return;
+                }
+                //string message = textBox_Message.Text;
+                string message = textBox_Message.Text;
+                header h = new header();
+                h.thread_id = listbox_threads.SelectedIndex - 1;
+                h.message_size = message.Length;
+                if(!SendMappingMessage(ref message, ref h))
+                {
+                    CloseFileMapping();
+                    MessageBox.Show("Внимание! Не удалось отправить сообщения!");
                     return;
                 }
 

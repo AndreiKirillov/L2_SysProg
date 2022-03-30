@@ -7,10 +7,29 @@
 #include "EventsKirillov.h"
 #include "ThreadKirillov.h"
 #include "ThreadStorage.h"
+#include "FileMapping.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+//#pragma comment (lib, "FileMapping.lib")
+
+struct header
+{
+    int thread_id;
+    int message_size;
+};
+
+extern "C"
+{
+    __declspec(dllimport) bool __stdcall CreateMappingFile(const char* filename);
+    __declspec(dllimport) bool __stdcall SendMappingMessage(const char* message, header& h);
+    __declspec(dllimport) char* __stdcall ReadMessage(header& h);
+   // __declspec(dllimport) bool __stdcall SendMappingMessage(std::string& message, header& h);
+    //__declspec(dllimport) void __stdcall ReadMessage(std::string& message, header& h);
+    __declspec(dllimport) void __stdcall CloseFileMapping();
+}
 
 
 // Единственный объект приложения
@@ -80,6 +99,31 @@ int main()
         else
         {
             setlocale(LC_ALL, "Russian");
+            if (!CreateMappingFile("myfile.dat"))
+                cout << "Не удалось создать mapping file" << endl;
+            const char* message = "testing mapping message";
+            header h{ 7, strlen(message)+1 };
+            if(!SendMappingMessage(message, h))
+                cout << "Не удалось отправить сообщение" << endl;
+
+            header newheader;
+            char* received = ReadMessage(newheader);
+            cout << received << newheader.thread_id << endl;
+            CloseFileMapping;
+           /* if (!CreateMappingFile("myfile.dat"))
+                cout << "Не удалось создать mapping file" << endl;
+            std::string message = "testing mapping message";
+            header h{ 7, message.size()+1 };
+            if(!SendMappingMessage(message, h))
+                cout << "Не удалось отправить сообщение" << endl;
+
+            header newheader;
+            std::string str;
+            ReadMessage(str,newheader);
+            cout << str<< h.thread_id;
+            CloseFileMapping;*/
+
+
 
             // список программных событий
             list<HANDLE> kernel_objects; 
@@ -159,7 +203,12 @@ int main()
                 case 2:
                 {
                     //storage.ActionLastThread();
-                    storage.ActionThreadByID(5);
+                   /* std::string received_message;
+                    header h;
+                    bool b=CreateMappingFile("myfile.dat");
+                    ReadMessage(received_message, h);
+                    cout << "Thread id = " << h.thread_id << ", message: " << received_message << endl;*/
+                    //storage.ActionThreadByID(5);
                     SetEvent(confirm_event);
                 }
                 break;

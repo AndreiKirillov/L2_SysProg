@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "framework.h"
 #include "FileMapping.h"
+#include <string>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,69 +70,98 @@ struct header
 	int message_size;
 };
 
+struct message
+{
+	int thread_id;
+	char* message;
+
+};
+
 HANDLE hFile;
 HANDLE hFileMap;
 
 extern "C"
 {
-	__declspec(dllexport) bool __stdcall CreateMappingFile(char* filename)
+	__declspec(dllexport) bool __stdcall CreateMappingFile(const char* filename)
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
 		//header h = { addr, strlen(str) + 1 };
-		hFile = CreateFile((LPCWSTR)filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
+		hFile = CreateFileA((LPCSTR)filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
 		if (hFile == INVALID_HANDLE_VALUE)
 			return false;
-
-		/*hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, h.size + sizeof(header), NULL);
-		if (hFileMap == NULL)
-			return false;
-
-		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.size + sizeof(header));
-
-		memcpy(buff, &h, sizeof(header));
-		memcpy(buff + sizeof(header), str, h.size);
-
-
-		UnmapViewOfFile(buff);
-		CloseHandle(hFileMap);
-		CloseHandle(hFile);*/
 
 		return true;
 	}
 
-	__declspec(dllexport) bool __stdcall SendMessage(char* message, header& h)
+	__declspec(dllexport) bool __stdcall SendMappingMessage(const char* message, header& h)
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		//header h = { addr, strlen(str) + 1 };
-		//header h = { addr, strlen(str) + 1 };
-		HANDLE hFile = CreateFile((LPCWSTR)"file.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
-		HANDLE hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+		hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
 		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
-
 		memcpy(buff, &h, sizeof(header));
+		//buff = const_cast<char*>(message.c_str());
 		memcpy(buff + sizeof(header), message, h.message_size);
-
+		//memcpy(buff + sizeof(header), const_cast<char*>(message.c_str()), h.message_size);
 
 		UnmapViewOfFile(buff);
-		//CloseHandle(hFileMap);
-		//CloseHandle(hFile);
+		return true;
+
+		//AFX_MANAGE_STATE(AfxGetStaticModuleState());
+		//HANDLE hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+		//char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
+
+		//memcpy(buff, &h, sizeof(header));
+		////buff = const_cast<char*>(message.c_str());
+		//memcpy(buff + sizeof(header), const_cast<char*>(message.c_str()), h.message_size);
+		////memcpy(buff + sizeof(header), const_cast<char*>(message.c_str()), h.message_size);
+
+		//UnmapViewOfFile(buff);
+		//return true;
 	}
 
 	__declspec(dllexport) char* __stdcall ReadMessage(header& h)
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		HANDLE hFile = CreateFile((LPCWSTR)"file.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
-		HANDLE hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
-		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
+		hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+		char* buff_for_header = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));//h.message_size + sizeof(header));
+		memcpy(&h, buff_for_header, sizeof(header));
+		UnmapViewOfFile(buff_for_header);
+		CloseHandle(hFileMap);
 
-		memcpy(&h, buff, sizeof(header));
-		char* message = nullptr;
-		memcpy(message, buff + sizeof(header), h.message_size);
+		hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+		char* buff_for_msg = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header)+ h.message_size);
 
+		char* message = new char[h.message_size];
+		memcpy(message, buff_for_msg + sizeof(header), h.message_size);
 
-		UnmapViewOfFile(buff);
-		//CloseHandle(hFileMap);
-		//CloseHandle(hFile);
+		UnmapViewOfFile(buff_for_msg);
+		return message;
+
+		//AFX_MANAGE_STATE(AfxGetStaticModuleState());
+		//hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, sizeof(header), NULL);
+		//char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));//h.message_size + sizeof(header));
+		////char* message = new char[strlen(buff)];
+
+		//memcpy(&h, buff, sizeof(header));
+		//UnmapViewOfFile(buff);             
+		//CloseHandle(hFileMap);           // возможно это глупо
+
+		//hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, sizeof(header) + h.message_size, NULL);
+		//char* new_buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header) + h.message_size);
+		//char* ch_message = new char[h.message_size];
+		//memcpy(ch_message, new_buff + sizeof(header), h.message_size);
+
+		//UnmapViewOfFile(new_buff);
+		//message = ch_message;
+		//delete[] ch_message;
+
+		
+	}
+
+	__declspec(dllexport) void __stdcall CloseFileMapping()
+	{
+		CloseHandle(hFileMap);
+		CloseHandle(hFile);
 	}
 
 }
