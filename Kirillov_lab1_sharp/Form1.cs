@@ -79,7 +79,7 @@ namespace Kirillov_lab1_sharp
                     {
                         for (int i = 0; i < nThreads; i++)
                         {
-                            Thread.Sleep(100);   // небольшая задержка, иначе потоки не могут нормально инициализироваться
+                            //Thread.Sleep(100);   // небольшая задержка, иначе потоки не могут нормально инициализироваться
                             startEvent.Set();
                             if(confirmEvent.WaitOne(-1))
                                 listbox_threads.Items.Add($"{++count}-й поток");
@@ -98,7 +98,7 @@ namespace Kirillov_lab1_sharp
                 {
                     for (int i = 0; i < nThreads; i++)
                     {
-                        Thread.Sleep(100);
+                        //Thread.Sleep(100);
                         startEvent.Set();
                         confirmEvent.WaitOne();
                         listbox_threads.Items.Add($"{++count}-й поток");
@@ -173,11 +173,13 @@ namespace Kirillov_lab1_sharp
                 //    }
                 //}
 
-                IntPtr message = Marshal.StringToHGlobalAnsi("messageffffffffffffff");
+                
+                IntPtr message = Marshal.StringToHGlobalAnsi(textBox_Message.Text);
                 //StringBuilder message = new StringBuilder(textBox_Message.Text);
                 header h = new header();
                 h.thread_id = listbox_threads.SelectedIndex - 1;
-                h.message_size = message.ToString().Length;
+                string msg = Marshal.PtrToStringAnsi(message);
+                h.message_size = msg.Length + 1;
 
                 if (!SendMappingMessage(message, ref h))
                 {

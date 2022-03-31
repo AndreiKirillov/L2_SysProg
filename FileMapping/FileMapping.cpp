@@ -98,24 +98,10 @@ extern "C"
 		hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
 		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
 		memcpy(buff, &h, sizeof(header));
-		//buff = const_cast<char*>(message.c_str());
 		memcpy(buff + sizeof(header), message, h.message_size);
-		//memcpy(buff + sizeof(header), const_cast<char*>(message.c_str()), h.message_size);
 
 		UnmapViewOfFile(buff);
 		return true;
-
-		//AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		//HANDLE hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
-		//char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
-
-		//memcpy(buff, &h, sizeof(header));
-		////buff = const_cast<char*>(message.c_str());
-		//memcpy(buff + sizeof(header), const_cast<char*>(message.c_str()), h.message_size);
-		////memcpy(buff + sizeof(header), const_cast<char*>(message.c_str()), h.message_size);
-
-		//UnmapViewOfFile(buff);
-		//return true;
 	}
 
 	__declspec(dllexport) char* __stdcall ReadMessage(header& h)
@@ -136,25 +122,6 @@ extern "C"
 		UnmapViewOfFile(buff_for_msg);
 		return message;
 
-		//AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		//hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, sizeof(header), NULL);
-		//char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));//h.message_size + sizeof(header));
-		////char* message = new char[strlen(buff)];
-
-		//memcpy(&h, buff, sizeof(header));
-		//UnmapViewOfFile(buff);             
-		//CloseHandle(hFileMap);           // возможно это глупо
-
-		//hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, sizeof(header) + h.message_size, NULL);
-		//char* new_buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header) + h.message_size);
-		//char* ch_message = new char[h.message_size];
-		//memcpy(ch_message, new_buff + sizeof(header), h.message_size);
-
-		//UnmapViewOfFile(new_buff);
-		//message = ch_message;
-		//delete[] ch_message;
-
-		
 	}
 
 	__declspec(dllexport) void __stdcall CloseFileMapping()

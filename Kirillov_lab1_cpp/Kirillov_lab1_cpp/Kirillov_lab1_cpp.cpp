@@ -171,7 +171,7 @@ int main()
                         break;
                     }
 
-                    if (!t->Create(ThreadFunction, std::move(p)))
+                    if (!t->Create(ThreadFunction, p))
                     {
                         SetEvent(error_event);
                         break;
@@ -207,7 +207,8 @@ int main()
                     header h;
                     CreateMappingFile();//"myfile.dat");
                     char* received_msg = ReadMessage(h);
-                    cout << "Thread id = " << h.thread_id << ", message: " << received_msg << endl;
+                    cout << "Thread id = " << h.thread_id << " size "<< h.message_size<<   ", message: " << received_msg << endl;
+                    CloseFileMapping();
                     //storage.ActionThreadByID(5);
                     SetEvent(confirm_event);
                 }

@@ -25,15 +25,16 @@ int ThreadKirillov::GetID()
 }
 
 // Функция создания потока, возвращает false при некорректной работе
-bool ThreadKirillov::Create(AFX_THREADPROC thread_function, ParamsToThread&& param)
+bool ThreadKirillov::Create(AFX_THREADPROC thread_function, ParamsToThread param)
 {
 	if (param.id == 0 || param.control_event == NULL || param.receive_msg_event == NULL)
 		return false;
 	_id = param.id;
 	_control_event = param.control_event;
 	_receive_msg_event = param.receive_msg_event;
+	_param = param;
 	
-	CWinThread* new_thread = AfxBeginThread(thread_function, std::move(&param));
+	CWinThread* new_thread = AfxBeginThread(thread_function, &_param);
 	if (new_thread == NULL)
 		return false;
 	_thread = new_thread->m_hThread;
