@@ -25,12 +25,12 @@ extern "C"
 {
     __declspec(dllimport) bool __stdcall CreateMappingFile();//const char* filename);
     __declspec(dllimport) bool __stdcall SendMappingMessage(void* message, header& h);
-    __declspec(dllimport) char* __stdcall ReadMessage(header& h);
+   // __declspec(dllimport) std::string __stdcall ReadMessage(header& h);
    // __declspec(dllimport) bool __stdcall SendMappingMessage(std::string& message, header& h);
     //__declspec(dllimport) void __stdcall ReadMessage(std::string& message, header& h);
     __declspec(dllimport) void __stdcall CloseFileMapping();
 }
-
+__declspec(dllimport) std::string __stdcall ReadMessage(header& h);
 
 // Единственный объект приложения
 
@@ -202,11 +202,10 @@ int main()
 
                 case 2:
                 {
-                    //storage.ActionLastThread();
-                    //std::string received_message;
+                    
                     header h;
                     CreateMappingFile();//"myfile.dat");
-                    char* received_msg = ReadMessage(h);
+                    std::string received_msg = ReadMessage(h);
                     cout << "Thread id = " << h.thread_id << " size "<< h.message_size<<   ", message: " << received_msg << endl;
                     CloseFileMapping();
                     //storage.ActionThreadByID(5);

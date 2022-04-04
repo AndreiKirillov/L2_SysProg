@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ThreadKirillov.h"
 
-ThreadKirillov::ThreadKirillov(): _id(0), _thread(nullptr), _control_event(nullptr), _receive_msg_event(nullptr)
+ThreadKirillov::ThreadKirillov(): _id(0), _thread(nullptr), _control_event(nullptr), _receive_msg_event(nullptr), _param()
 {
 }
 

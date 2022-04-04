@@ -10,6 +10,7 @@
 #define new DEBUG_NEW
 #endif
 
+using namespace std;
 //
 //TODO: если эта библиотека DLL динамически связана с библиотеками DLL MFC,
 //		все функции, экспортированные из данной DLL-библиотеки, которые выполняют вызовы к
@@ -104,11 +105,12 @@ extern "C"
 		return true;
 	}
 
-	__declspec(dllexport) char* __stdcall ReadMessage(header& h)
+	/*__declspec(dllexport) char* __stdcall ReadMessage(header& h)
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
 		hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
-		char* buff_for_header = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));//h.message_size + sizeof(header));
+		char* buff_for_header = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));
+
 		memcpy(&h, buff_for_header, sizeof(header));
 		UnmapViewOfFile(buff_for_header);
 		CloseHandle(hFileMap);
@@ -122,12 +124,35 @@ extern "C"
 		UnmapViewOfFile(buff_for_msg);
 		return message;
 
-	}
+	}*/
 
 	__declspec(dllexport) void __stdcall CloseFileMapping()
 	{
 		CloseHandle(hFileMap);
 		CloseHandle(hFile);
 	}
+
+}
+__declspec(dllexport) string __stdcall ReadMessage(header& h)
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+	char* buff_for_header = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));
+
+	memcpy(&h, buff_for_header, sizeof(header));
+	UnmapViewOfFile(buff_for_header);
+	CloseHandle(hFileMap);
+
+	hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+	char* buff_for_msg = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header) + h.message_size);
+
+	char* message = new char[h.message_size];
+	memcpy(message, buff_for_msg + sizeof(header), h.message_size);
+	string str_message(message);
+
+	delete[] message;
+
+	UnmapViewOfFile(buff_for_msg);
+	return str_message;
 
 }

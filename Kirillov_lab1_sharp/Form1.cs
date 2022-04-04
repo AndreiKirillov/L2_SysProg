@@ -31,8 +31,8 @@ namespace Kirillov_lab1_sharp
         [DllImport("FileMapping.dll", EntryPoint = "_SendMappingMessage@8", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
         unsafe private static extern bool SendMappingMessage(IntPtr message, ref header h);
         
-        [DllImport("FileMapping.dll", EntryPoint = "_ReadMessage@4", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-        private static extern StringBuilder ReadMessage(ref header h);
+        //[DllImport("FileMapping.dll", EntryPoint = "_ReadMessage@4", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
+        //private static extern StringBuilder ReadMessage(ref header h);
 
         [DllImport("FileMapping.dll", EntryPoint = "_CloseFileMapping@0", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
         private static extern void CloseFileMapping();
