@@ -7,11 +7,26 @@
 #include "EventsKirillov.h"
 #include "ThreadKirillov.h"
 #include "ThreadStorage.h"
+#include "FileMapping.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+//#pragma comment (lib, "FileMapping.lib")
+
+struct header // заголовок для сообщения
+{
+    int thread_id;
+    int message_size;
+};
+
+// Функции из dll
+extern "C"
+{
+    __declspec(dllimport) bool __stdcall SendMappingMessage(void* message, header& h);
+}
+__declspec(dllimport) std::string __stdcall ReadMessage(header& h);
 
 // Единственный объект приложения
 
@@ -80,6 +95,31 @@ int main()
         else
         {
             setlocale(LC_ALL, "Russian");
+            /*if (!CreateMappingFile("myfile.dat"))
+                cout << "Не удалось создать mapping file" << endl;
+            const char* message = "testing mapping message";
+            header h{ 7, strlen(message)+1 };
+            if(!SendMappingMessage(message, h))
+                cout << "Не удалось отправить сообщение" << endl;
+
+            header newheader;
+            char* received = ReadMessage(newheader);
+            cout << received << newheader.thread_id << endl;
+            CloseFileMapping;*/
+           /* if (!CreateMappingFile("myfile.dat"))
+                cout << "Не удалось создать mapping file" << endl;
+            std::string message = "testing mapping message";
+            header h{ 7, message.size()+1 };
+            if(!SendMappingMessage(message, h))
+                cout << "Не удалось отправить сообщение" << endl;
+
+            header newheader;
+            std::string str;
+            ReadMessage(str,newheader);
+            cout << str<< h.thread_id;
+            CloseFileMapping;*/
+
+
 
             // список программных событий
             list<HANDLE> kernel_objects; 
@@ -127,7 +167,7 @@ int main()
                         break;
                     }
 
-                    if (!t->Create(ThreadFunction, std::move(p)))
+                    if (!t->Create(ThreadFunction, p))
                     {
                         SetEvent(error_event);
                         break;
@@ -158,8 +198,10 @@ int main()
 
                 case 2:
                 {
-                    //storage.ActionLastThread();
-                    storage.ActionThreadByID(5);
+                    header h;
+                    std::string received_msg = ReadMessage(h);
+                    cout << "Thread id = " << h.thread_id << " size "<< h.message_size<<   ", message: " << received_msg << endl;
+                    //storage.ActionThreadByID(5);
                     SetEvent(confirm_event);
                 }
                 break;

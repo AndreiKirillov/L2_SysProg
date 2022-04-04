@@ -4,11 +4,13 @@
 #include "pch.h"
 #include "framework.h"
 #include "FileMapping.h"
+#include <string>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+using namespace std;
 //
 //TODO: если эта библиотека DLL динамически связана с библиотеками DLL MFC,
 //		все функции, экспортированные из данной DLL-библиотеки, которые выполняют вызовы к
@@ -63,75 +65,67 @@ BOOL CFileMappingApp::InitInstance()
 	return TRUE;
 }
 
-struct header
+// структура для заголовка сообщения
+struct header    
 {
 	int thread_id;
 	int message_size;
 };
 
-HANDLE hFile;
-HANDLE hFileMap;
-
 extern "C"
 {
-	__declspec(dllexport) bool __stdcall CreateMappingFile(char* filename)
+	// Функция отправки сообщения через mapped файл
+	__declspec(dllexport) bool __stdcall SendMappingMessage(void* message, header& h)
 	{
 		AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		//header h = { addr, strlen(str) + 1 };
-		hFile = CreateFile((LPCWSTR)filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
-		if (hFile == INVALID_HANDLE_VALUE)
+		HANDLE hFile = CreateFileA("myfile.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
+		if (hFile == INVALID_HANDLE_VALUE)           // проверяем создание файла
 			return false;
 
-		/*hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, h.size + sizeof(header), NULL);
-		if (hFileMap == NULL)
+		HANDLE hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+		if (hFileMap == NULL)                   // проверяем создание файла, отображаемого в память
 			return false;
 
-		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.size + sizeof(header));
-
-		memcpy(buff, &h, sizeof(header));
-		memcpy(buff + sizeof(header), str, h.size);
-
-
-		UnmapViewOfFile(buff);
-		CloseHandle(hFileMap);
-		CloseHandle(hFile);*/
-
-		return true;
-	}
-
-	__declspec(dllexport) bool __stdcall SendMessage(char* message, header& h)
-	{
-		AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		//header h = { addr, strlen(str) + 1 };
-		//header h = { addr, strlen(str) + 1 };
-		HANDLE hFile = CreateFile((LPCWSTR)"file.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
-		HANDLE hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
 		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
-
 		memcpy(buff, &h, sizeof(header));
 		memcpy(buff + sizeof(header), message, h.message_size);
 
-
 		UnmapViewOfFile(buff);
-		//CloseHandle(hFileMap);
-		//CloseHandle(hFile);
+		CloseHandle(hFileMap);
+		CloseHandle(hFile);
+		return true;
 	}
 
-	__declspec(dllexport) char* __stdcall ReadMessage(header& h)
-	{
-		AFX_MANAGE_STATE(AfxGetStaticModuleState());
-		HANDLE hFile = CreateFile((LPCWSTR)"file.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
-		HANDLE hFileMap = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
-		char* buff = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, h.message_size + sizeof(header));
+}
+__declspec(dllexport) string __stdcall ReadMessage(header& h)
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	HANDLE hFile = CreateFileA("myfile.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return string("");                         // проверяем создание файла
 
-		memcpy(&h, buff, sizeof(header));
-		char* message = nullptr;
-		memcpy(message, buff + sizeof(header), h.message_size);
+	HANDLE hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+	if (hFileMap == NULL)                      // проверяем создание файла, отображаемого в память
+		return string("");
 
+	// Читаем заголовок сообщения
+	char* buff_for_header = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));
 
-		UnmapViewOfFile(buff);
-		//CloseHandle(hFileMap);
-		//CloseHandle(hFile);
-	}
+	memcpy(&h, buff_for_header, sizeof(header));
+	UnmapViewOfFile(buff_for_header);
+	CloseHandle(hFileMap);
 
+	hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+
+	// читаем само сообщение
+	char* buff_for_msg = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header) + h.message_size);
+
+	char* message = new char[h.message_size];                        // память под сообщение
+	memcpy(message, buff_for_msg + sizeof(header), h.message_size);
+	string str_message(message);
+
+	delete[] message;       // освобождаем память
+
+	UnmapViewOfFile(buff_for_msg);
+	return str_message;
 }

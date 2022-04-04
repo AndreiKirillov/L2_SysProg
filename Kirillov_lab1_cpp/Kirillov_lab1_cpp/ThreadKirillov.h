@@ -10,6 +10,7 @@ private:
 	HANDLE _thread;
 	HANDLE _control_event;
 	HANDLE _receive_msg_event;
+	ParamsToThread _param;
 
 	ThreadKirillov(ThreadKirillov&);            // запрещаем копирование и присваивание
 	ThreadKirillov(const ThreadKirillov&);      // сделав конструкторы приватными
@@ -21,7 +22,7 @@ public:
 	void SetID(int id);
 	int GetID();
 	
-	bool Create(AFX_THREADPROC thread_function, ParamsToThread&& param);
+	bool Create(AFX_THREADPROC thread_function, ParamsToThread param);
 	void SetActive();
 
 	void ReceiveMessage();

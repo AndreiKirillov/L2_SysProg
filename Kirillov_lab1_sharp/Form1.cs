@@ -9,11 +9,27 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Kirillov_lab1_sharp
 {
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct header            
+    {
+        [MarshalAs(UnmanagedType.I4)]
+        public int thread_id;
+        [MarshalAs(UnmanagedType.I4)]
+        public int message_size;
+    };
+
     public partial class Form1 : Form
     {
+        // подключаем dll функцию отправки сообщения
+
+        [DllImport("FileMapping.dll", EntryPoint = "_SendMappingMessage@8", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
+        unsafe private static extern bool SendMappingMessage(IntPtr message, ref header h);
+
 
         private Process child_process = null;
         private int count = 0;
@@ -40,7 +56,7 @@ namespace Kirillov_lab1_sharp
                     return;
                 }
 
-                child_process = Process.Start("C:/repository/SysProg/L2_SysProg/Kirillov_lab1_cpp/Debug/Kirillov_lab1_cpp.exe");
+                child_process = Process.Start("C:/repository/SysProg/L2_SysProg/Debug/Kirillov_lab1_cpp.exe");
                 listbox_threads.Items.Add("Все потоки");
                 listbox_threads.Items.Add("Главный поток");
                 int nThreads = Convert.ToInt32(textBox_Nthreads.Text);
@@ -49,7 +65,6 @@ namespace Kirillov_lab1_sharp
                     {
                         for (int i = 0; i < nThreads; i++)
                         {
-                            Thread.Sleep(100);   // небольшая задержка, иначе потоки не могут нормально инициализироваться
                             startEvent.Set();
                             if(confirmEvent.WaitOne(-1))
                                 listbox_threads.Items.Add($"{++count}-й поток");
@@ -67,8 +82,7 @@ namespace Kirillov_lab1_sharp
                 if (nThreads > 0)
                 {
                     for (int i = 0; i < nThreads; i++)
-                    {
-                        Thread.Sleep(100);
+                    { 
                         startEvent.Set();
                         confirmEvent.WaitOne();
                         listbox_threads.Items.Add($"{++count}-й поток");
@@ -117,9 +131,25 @@ namespace Kirillov_lab1_sharp
                     MessageBox.Show("Внимание! Напишите текст сообщения!");
                     return;
                 }
+                if(listbox_threads.SelectedIndex < 0)
+                {
+                    MessageBox.Show("Внимание! Выберете поток!");
+                    return;
+                }
+
+                IntPtr message = Marshal.StringToHGlobalAnsi(textBox_Message.Text);
+                header h = new header();
+                h.thread_id = listbox_threads.SelectedIndex - 1;
+                string msg = Marshal.PtrToStringAnsi(message);
+                h.message_size = msg.Length + 1;
+
+                if (!SendMappingMessage(message, ref h))
+                {
+                    MessageBox.Show("Внимание! Не удалось отправить сообщения!");
+                    return;
+                }
 
                 messageEvent.Set();
-
                 confirmEvent.WaitOne();
             }
             else
