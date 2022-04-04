@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 namespace Kirillov_lab1_sharp
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct header
+    public struct header            
     {
         [MarshalAs(UnmanagedType.I4)]
         public int thread_id;
@@ -25,18 +25,10 @@ namespace Kirillov_lab1_sharp
 
     public partial class Form1 : Form
     {
-        [DllImport("FileMapping.dll", SetLastError = true, EntryPoint = "_CreateMappingFile@0", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-        private static extern bool CreateMappingFile();//StringBuilder filename);
-       
+        // подключаем dll функцию отправки сообщения
+
         [DllImport("FileMapping.dll", EntryPoint = "_SendMappingMessage@8", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
         unsafe private static extern bool SendMappingMessage(IntPtr message, ref header h);
-        
-        //[DllImport("FileMapping.dll", EntryPoint = "_ReadMessage@4", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-        //private static extern StringBuilder ReadMessage(ref header h);
-
-        [DllImport("FileMapping.dll", EntryPoint = "_CloseFileMapping@0", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-        private static extern void CloseFileMapping();
-
 
 
         private Process child_process = null;
@@ -50,12 +42,6 @@ namespace Kirillov_lab1_sharp
         public Form1()
         {
             InitializeComponent();
-            //CreateMappingFile();
-            //IntPtr message = Marshal.StringToHGlobalAnsi("Fuckin message");
-            //header h = new header();
-            //h.thread_id = 5;
-            //h.message_size = message.ToString().Length;
-            //SendMappingMessage(message, ref h);
         }
 
         private void btn_start_Click(object sender, EventArgs e)
@@ -79,7 +65,6 @@ namespace Kirillov_lab1_sharp
                     {
                         for (int i = 0; i < nThreads; i++)
                         {
-                            //Thread.Sleep(100);   // небольшая задержка, иначе потоки не могут нормально инициализироваться
                             startEvent.Set();
                             if(confirmEvent.WaitOne(-1))
                                 listbox_threads.Items.Add($"{++count}-й поток");
@@ -97,8 +82,7 @@ namespace Kirillov_lab1_sharp
                 if (nThreads > 0)
                 {
                     for (int i = 0; i < nThreads; i++)
-                    {
-                        //Thread.Sleep(100);
+                    { 
                         startEvent.Set();
                         confirmEvent.WaitOne();
                         listbox_threads.Items.Add($"{++count}-й поток");
@@ -147,35 +131,13 @@ namespace Kirillov_lab1_sharp
                     MessageBox.Show("Внимание! Напишите текст сообщения!");
                     return;
                 }
-                var filename = new StringBuilder("myfile.dat");
-
-                //CreateMappingFile(filename);
-                if (!CreateMappingFile())//filename))
+                if(listbox_threads.SelectedIndex < 0)
                 {
-                    MessageBox.Show("Внимание! Не удалось открыть файл для передачи сообщения!");
+                    MessageBox.Show("Внимание! Выберете поток!");
                     return;
                 }
-                //unsafe
-                //{
-                //    void* msg;
-                //    IntPtr message = Marshal.StringToHGlobalAnsi("Fuckin message");
-                //    //IntPtr message = new StringBuilder(textBox_Message.Text);
-                //    header h = new header();
-                //    h.thread_id = listbox_threads.SelectedIndex - 1;
-                //    h.message_size = message.ToString().Length;
-                //    msg = message.ToPointer();
 
-                //    if (!SendMappingMessage(msg, ref h))
-                //    {
-                //        CloseFileMapping();
-                //        MessageBox.Show("Внимание! Не удалось отправить сообщения!");
-                //        return;
-                //    }
-                //}
-
-                
                 IntPtr message = Marshal.StringToHGlobalAnsi(textBox_Message.Text);
-                //StringBuilder message = new StringBuilder(textBox_Message.Text);
                 header h = new header();
                 h.thread_id = listbox_threads.SelectedIndex - 1;
                 string msg = Marshal.PtrToStringAnsi(message);
@@ -183,13 +145,11 @@ namespace Kirillov_lab1_sharp
 
                 if (!SendMappingMessage(message, ref h))
                 {
-                    CloseFileMapping();
                     MessageBox.Show("Внимание! Не удалось отправить сообщения!");
                     return;
                 }
 
                 messageEvent.Set();
-
                 confirmEvent.WaitOne();
             }
             else

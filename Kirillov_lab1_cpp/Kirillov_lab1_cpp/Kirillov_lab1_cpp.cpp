@@ -15,20 +15,16 @@
 
 //#pragma comment (lib, "FileMapping.lib")
 
-struct header
+struct header // заголовок для сообщения
 {
     int thread_id;
     int message_size;
 };
 
+// Функции из dll
 extern "C"
 {
-    __declspec(dllimport) bool __stdcall CreateMappingFile();//const char* filename);
     __declspec(dllimport) bool __stdcall SendMappingMessage(void* message, header& h);
-   // __declspec(dllimport) std::string __stdcall ReadMessage(header& h);
-   // __declspec(dllimport) bool __stdcall SendMappingMessage(std::string& message, header& h);
-    //__declspec(dllimport) void __stdcall ReadMessage(std::string& message, header& h);
-    __declspec(dllimport) void __stdcall CloseFileMapping();
 }
 __declspec(dllimport) std::string __stdcall ReadMessage(header& h);
 
@@ -202,12 +198,9 @@ int main()
 
                 case 2:
                 {
-                    
                     header h;
-                    CreateMappingFile();//"myfile.dat");
                     std::string received_msg = ReadMessage(h);
                     cout << "Thread id = " << h.thread_id << " size "<< h.message_size<<   ", message: " << received_msg << endl;
-                    CloseFileMapping();
                     //storage.ActionThreadByID(5);
                     SetEvent(confirm_event);
                 }
