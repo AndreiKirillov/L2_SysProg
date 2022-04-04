@@ -27,6 +27,7 @@ extern "C"
     __declspec(dllimport) bool __stdcall SendMappingMessage(void* message, header& h);
 }
 __declspec(dllimport) std::string __stdcall ReadMessage(header& h);
+__declspec(dllimport) header __stdcall ReadHeader();
 
 // Единственный объект приложения
 
@@ -47,22 +48,32 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
         int event_index = WaitForMultipleObjects(2, hControlEvents, FALSE, INFINITE);     // Ждём сигнал от события
         switch (event_index)
         {
-        case 0:// событие отправки сообщения
+        case 0:// событие получения сообщения
         {
-            cout << "Thread №" + n + " RECEIVED Message" << endl;
-            ofstream outfile;
-            outfile.open("C:/repository/SysProg/L2_SysProg/OutputData/" + n + ".txt");
-            if (outfile.is_open())
+            header h;
+            std::string received_msg = ReadMessage(h);
+
+            if(received_msg == "")
+                cout << "Thread №" + n + "FAIL: Message wasn't received" << endl;
+            else
             {
-                outfile << n + " Test Message";
-                outfile.close();
+                cout << "Thread №" + n + " RECEIVED Message" << endl;
+                ofstream outfile;
+                outfile.open("C:/repository/SysProg/L2_SysProg/OutputData/" + n + ".txt");
+                if (outfile.is_open())
+                {
+                    outfile << "Message size: "<< to_string(h.message_size) << endl;
+                    outfile << "Message:" << endl;
+                    outfile << received_msg;
+                    outfile.close();
+                }
             }
         }
         break;
 
         case 1: // событие завершения потока
         {
-            cout << "Thread №" + n + " CLOSE" << endl;
+            cout << "Thread №" + n + " IS CLOSED" << endl;
             return 0;
         }
         }
@@ -95,31 +106,6 @@ int main()
         else
         {
             setlocale(LC_ALL, "Russian");
-            /*if (!CreateMappingFile("myfile.dat"))
-                cout << "Не удалось создать mapping file" << endl;
-            const char* message = "testing mapping message";
-            header h{ 7, strlen(message)+1 };
-            if(!SendMappingMessage(message, h))
-                cout << "Не удалось отправить сообщение" << endl;
-
-            header newheader;
-            char* received = ReadMessage(newheader);
-            cout << received << newheader.thread_id << endl;
-            CloseFileMapping;*/
-           /* if (!CreateMappingFile("myfile.dat"))
-                cout << "Не удалось создать mapping file" << endl;
-            std::string message = "testing mapping message";
-            header h{ 7, message.size()+1 };
-            if(!SendMappingMessage(message, h))
-                cout << "Не удалось отправить сообщение" << endl;
-
-            header newheader;
-            std::string str;
-            ReadMessage(str,newheader);
-            cout << str<< h.thread_id;
-            CloseFileMapping;*/
-
-
 
             // список программных событий
             list<HANDLE> kernel_objects; 
@@ -198,10 +184,12 @@ int main()
 
                 case 2:
                 {
-                    header h;
-                    std::string received_msg = ReadMessage(h);
-                    cout << "Thread id = " << h.thread_id << " size "<< h.message_size<<   ", message: " << received_msg << endl;
-                    //storage.ActionThreadByID(5);
+                    header h = ReadHeader();    // читаем заголовок, чтобы узнать, какому потоку читать сообщение
+                    if (h.message_size != 0)    
+                    {
+                        cout << "Thread id = " << h.thread_id << " size " << h.message_size << endl;
+                        storage.ActionThreadByID(h.thread_id);
+                    }
                     SetEvent(confirm_event);
                 }
                 break;
@@ -211,8 +199,6 @@ int main()
                     SetEvent(close_programm_event);
                     storage.DeleteAll();
                     CloseAllObjects(kernel_objects);
-                    /*int d;
-                    cin >> d;*/
                     return 0;
                 }
                 }

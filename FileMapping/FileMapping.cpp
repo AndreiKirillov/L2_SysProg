@@ -127,5 +127,32 @@ __declspec(dllexport) string __stdcall ReadMessage(header& h)
 	delete[] message;       // освобождаем память
 
 	UnmapViewOfFile(buff_for_msg);
+	CloseHandle(hFileMap);
+	CloseHandle(hFile);
 	return str_message;
+}
+
+__declspec(dllexport) header __stdcall ReadHeader()
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+	header h;
+	h.thread_id = 0;
+	h.message_size = 0;
+	HANDLE hFile = CreateFileA("myfile.dat", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, 0);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return h;                         // проверяем создание файла
+
+	HANDLE hFileMap = CreateFileMappingA(hFile, NULL, PAGE_READWRITE, 0, h.message_size + sizeof(header), NULL);
+	if (hFileMap == NULL)                      // проверяем создание файла, отображаемого в память
+		return h;
+
+	char* buff_for_header = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(header));
+
+	memcpy(&h, buff_for_header, sizeof(header));
+	UnmapViewOfFile(buff_for_header);
+	CloseHandle(hFileMap);
+	CloseHandle(hFile);
+	
+	return h;
 }

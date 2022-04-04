@@ -28,6 +28,7 @@
 #include <stack>
 #include <memory>
 #include <algorithm>
+#include <mutex>
 
 struct ParamsToThread
 {
