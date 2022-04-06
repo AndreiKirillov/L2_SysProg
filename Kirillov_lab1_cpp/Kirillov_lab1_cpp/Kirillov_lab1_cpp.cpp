@@ -174,7 +174,7 @@ int main()
                 {
                 case 0:         // Событие создания потока
                 {
-                    std::unique_ptr<ThreadKirillov> t = std::make_unique<ThreadKirillov>();
+                    std::unique_ptr<ThreadKirillov> new_thread = std::make_unique<ThreadKirillov>();
                     
                     ParamsToThread p;
                     p.id = threads_storage.GetCount() + 1;
@@ -186,13 +186,13 @@ int main()
                         break;
                     }
 
-                    if (!t->Create(ThreadFunction, p))
+                    if (!new_thread->Create(ThreadFunction, p))
                     {
                         SetEvent(error_event);
                         break;
                     }
                     
-                    threads_storage.AddThread(std::move(t));
+                    threads_storage.AddThread(std::move(new_thread));
                     SetEvent(confirm_event);
                 }
                 break;
