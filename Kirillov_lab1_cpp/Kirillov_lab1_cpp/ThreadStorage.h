@@ -21,6 +21,7 @@ public:
 	void DeleteLastThread();
 	void DeleteAll();
 
+	void ActionAll();
 	void ActionThreadByID(int id);
 	void ActionLastThread();
 

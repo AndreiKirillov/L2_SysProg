@@ -1,6 +1,9 @@
 ﻿// Kirillov_lab1_cpp.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
 //
 
+//#define _MAIN true
+//#define _WORKING false
+
 #include "pch.h"
 #include "framework.h"
 #include "Kirillov_lab1_cpp.h"
@@ -12,8 +15,6 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
-//#pragma comment (lib, "FileMapping.lib")
 
 struct header // заголовок для сообщения
 {
@@ -35,12 +36,46 @@ CWinApp theApp;
 
 using namespace std;
 
+void ReceiveAndProcessMessage(bool thread_type, int thread_id = 0)
+{
+    header h;
+    string received_message = ReadMessage(h);
+    if (thread_type)
+    {
+        if (received_message == "")
+            cout << "MAIN THREAD FAIL: Message wasn't received or empty!" << endl;
+        else
+        {
+            cout << "Main Thread RECEIVED Message" << endl <<
+                "Size: " << h.message_size << endl <<
+                "Message: " << received_message << endl;
+        }
+    }
+    else
+    {
+        if (received_message == "")
+            cout << "Thread №" + to_string(thread_id) + "FAIL: Message wasn't received or empty!" << endl;
+        else
+        {
+            cout << "Thread №" + to_string(thread_id) + " RECEIVED Message" << endl;
+            ofstream outfile;
+            outfile.open("C:/repository/SysProg/L2_SysProg/OutputData/" + to_string(thread_id) + ".txt");
+            if (outfile.is_open())
+            {
+                outfile << "Message size: " << to_string(h.message_size) << endl;
+                outfile << "Message:" << endl << received_message;
+                outfile.close();
+            }
+        }
+    }
+}
+
 UINT ThreadFunction(LPVOID param)     // Функция для выполнения в потоке
 {
     ParamsToThread* p = static_cast<ParamsToThread*>(param);
-    string n = to_string(p->id);
+    int thread_id = p->id;
 
-    cout << "Thread №" + n + " START" << endl;
+    cout << "Thread №" + to_string(thread_id) + " START" << endl;
     HANDLE hControlEvents[2] = {p->receive_msg_event, p->control_event};
 
     while (true)
@@ -50,30 +85,13 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
         {
         case 0:// событие получения сообщения
         {
-            header h;
-            std::string received_msg = ReadMessage(h);
-
-            if(received_msg == "")
-                cout << "Thread №" + n + "FAIL: Message wasn't received" << endl;
-            else
-            {
-                cout << "Thread №" + n + " RECEIVED Message" << endl;
-                ofstream outfile;
-                outfile.open("C:/repository/SysProg/L2_SysProg/OutputData/" + n + ".txt");
-                if (outfile.is_open())
-                {
-                    outfile << "Message size: "<< to_string(h.message_size) << endl;
-                    outfile << "Message:" << endl;
-                    outfile << received_msg;
-                    outfile.close();
-                }
-            }
+            ReceiveAndProcessMessage(_WORKING, thread_id);
         }
         break;
 
         case 1: // событие завершения потока
         {
-            cout << "Thread №" + n + " IS CLOSED" << endl;
+            cout << "Thread №" + to_string(thread_id) + " IS CLOSED" << endl;
             return 0;
         }
         }
@@ -187,8 +205,34 @@ int main()
                     header h = ReadHeader();    // читаем заголовок, чтобы узнать, какому потоку читать сообщение
                     if (h.message_size != 0)    
                     {
-                        cout << "Thread id = " << h.thread_id << " size " << h.message_size << endl;
-                        storage.ActionThreadByID(h.thread_id);
+                        switch (h.thread_id)
+                        {
+                        case -1:                               // Чтение из всех потоков
+                        {
+                            ReceiveAndProcessMessage(_MAIN);
+                            storage.ActionAll();
+                        }
+                        break;
+
+                        case 0:                                // Чтение из главного потока
+                        {
+                            ReceiveAndProcessMessage(_MAIN);
+                        }
+                        break;
+
+                        default:                              // Чтение из произвольного потока
+                        {
+                            try
+                            {
+                                storage.ActionThreadByID(h.thread_id);
+                            }
+                            catch (exception ex)
+                            {
+                                cout << ex.what() << endl;
+                            }
+                        }
+                        }
+
                     }
                     SetEvent(confirm_event);
                 }

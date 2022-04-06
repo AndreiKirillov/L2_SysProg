@@ -20,6 +20,9 @@
 #include <afxcmn.h>                     // поддержка MFC для общих элементов управления Windows
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
+#define _MAIN true
+#define _WORKING false
+
 #include <iostream>
 #include <fstream>
 #include <string>

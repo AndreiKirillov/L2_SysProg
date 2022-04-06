@@ -27,3 +27,7 @@ Kirillov_lab1_cpp/.vs/Kirillov_lab1_cpp/v16/.suo
 Kirillov_lab1_sharp/obj/Debug/.NETFramework,Version=v4.7.2.AssemblyAttributes.cs
 *.settings
 *.dat
+Debug/FileMapping.dll
+*.dll
+*.exp
+.vs/Kirillov_lab1_sharp/v16/.suo

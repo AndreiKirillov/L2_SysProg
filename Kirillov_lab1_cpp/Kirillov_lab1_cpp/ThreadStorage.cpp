@@ -35,12 +35,20 @@ void ThreadStorage::DeleteAll()   // очищает все потоки, у них отрабатывает дест
 	_finished_threads.clear();
 }
 
+void ThreadStorage::ActionAll()
+{
+	for (auto& thrd : _threads)
+		thrd->ReceiveMessage();
+}
+
 void ThreadStorage::ActionThreadByID(int id)
 {
 	auto t = find_if(_threads.begin(), _threads.end(), [&](auto& some_thread) {return some_thread->GetID() == id; });
 
 	if (t != _threads.end())
 		t->get()->ReceiveMessage();
+	else
+		throw std::out_of_range("Error! Thread with ID = " + std::to_string(id) + " doesn't exist!");
 }
 
 void ThreadStorage::ActionLastThread()
