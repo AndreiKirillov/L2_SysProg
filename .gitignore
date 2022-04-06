@@ -31,3 +31,5 @@ Debug/FileMapping.dll
 *.dll
 *.exp
 .vs/Kirillov_lab1_sharp/v16/.suo
+*.dll
+.vs/Kirillov_lab1_sharp/v16/.suo

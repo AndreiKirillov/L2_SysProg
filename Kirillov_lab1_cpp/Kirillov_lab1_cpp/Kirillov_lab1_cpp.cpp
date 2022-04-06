@@ -7,7 +7,6 @@
 #include "pch.h"
 #include "framework.h"
 #include "Kirillov_lab1_cpp.h"
-#include "EventsKirillov.h"
 #include "ThreadKirillov.h"
 #include "ThreadStorage.h"
 #include "FileMapping.h"
@@ -36,12 +35,18 @@ CWinApp theApp;
 
 using namespace std;
 
+mutex data_mtx;       // будет синхронизировать доступ к отображаемой памяти
+mutex console_mtx;    // будет синхронизировать работу консоли
+
 void ReceiveAndProcessMessage(bool thread_type, int thread_id = 0)
 {
     header h;
+    unique_lock<mutex> lock_data_mtx(data_mtx);          // Синхронизируем чтение из памяти
     string received_message = ReadMessage(h);
+    lock_data_mtx.unlock();
     if (thread_type)
     {
+        lock_guard<mutex> lock_console(console_mtx);
         if (received_message == "")
             cout << "MAIN THREAD FAIL: Message wasn't received or empty!" << endl;
         else
@@ -54,10 +59,15 @@ void ReceiveAndProcessMessage(bool thread_type, int thread_id = 0)
     else
     {
         if (received_message == "")
+        {
+            lock_guard<mutex> lock_console(console_mtx);   // нормально ли давать имя как несколько строк выше?
             cout << "Thread №" + to_string(thread_id) + "FAIL: Message wasn't received or empty!" << endl;
+        }
         else
         {
+            console_mtx.lock();
             cout << "Thread №" + to_string(thread_id) + " RECEIVED Message" << endl;
+            console_mtx.unlock();
             ofstream outfile;
             outfile.open("C:/repository/SysProg/L2_SysProg/OutputData/" + to_string(thread_id) + ".txt");
             if (outfile.is_open())
@@ -75,7 +85,10 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
     ParamsToThread* p = static_cast<ParamsToThread*>(param);
     int thread_id = p->id;
 
+    console_mtx.lock();
     cout << "Thread №" + to_string(thread_id) + " START" << endl;
+    console_mtx.unlock();
+
     HANDLE hControlEvents[2] = {p->receive_msg_event, p->control_event};
 
     while (true)
@@ -91,6 +104,7 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
 
         case 1: // событие завершения потока
         {
+            lock_guard<mutex> lock_console(console_mtx);
             cout << "Thread №" + to_string(thread_id) + " IS CLOSED" << endl;
             return 0;
         }
@@ -147,7 +161,6 @@ int main()
 
             HANDLE hControlEvents[4] = { create_thread_event, close_thread_event, message_event, close_programm_event };
 
-            EventsKirillov events;      // события для потоков
             ThreadStorage storage;
             SetEvent(confirm_event);   // подтвердение запуска приложения
 
