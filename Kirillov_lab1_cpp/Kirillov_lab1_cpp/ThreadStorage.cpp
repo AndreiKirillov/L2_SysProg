@@ -1,60 +1,60 @@
 #include "pch.h"
 #include "ThreadStorage.h"
 
-ThreadStorage::ThreadStorage(): _threads(0), _finished_threads(0)
+ThreadStorage::ThreadStorage(): _threads(0)
 {
 }
 
-int ThreadStorage::GetCount()
+int ThreadStorage::GetCount() const
 {
 	return _threads.size();
 }
 
-void ThreadStorage::AddThread(std::unique_ptr<ThreadKirillov>&& somethread)  // Добавление потока
+// Добавление потока
+void ThreadStorage::AddThread(std::unique_ptr<ThreadKirillov>&& somethread) 
 {
 	_threads.emplace_back(std::move(somethread));
 }
 
-void ThreadStorage::FinishLastThread()           // Посылает сигнал активации последнему потоку
+// Посылает сигнал активации последнему потоку
+void ThreadStorage::FinishLastThread()           
 {
 	if(_threads.size() > 0)
-		_threads[_threads.size() - 1]->SetActive();
+		_threads[_threads.size() - 1]->Finish();
 }
+
 
 void ThreadStorage::DeleteLastThread()            
 {
-	// перемещаем последний поток в активированные
-	_finished_threads.emplace_back(std::move(_threads[_threads.size() - 1]));
-	// укорачиваем основное хранилище
 	_threads.pop_back();
 }
 
-void ThreadStorage::DeleteAll()   // очищает все потоки, у них отрабатывает деструктор, освобождая ресурсы
+// очищает все потоки, у них отрабатывает деструктор, освобождая ресурсы
+void ThreadStorage::KillAndReleaseAll() 
 {
 	_threads.clear();
-	_finished_threads.clear();
 }
 
+//Активирует все потоки
 void ThreadStorage::ActionAll()
 {
 	for (auto& thrd : _threads)
-		thrd->ReceiveMessage();
+		thrd->Activate();
 }
 
+// Активирует конкретный поток
 void ThreadStorage::ActionThreadByID(int id)
 {
-	auto t = find_if(_threads.begin(), _threads.end(), [&](auto& some_thread) {return some_thread->GetID() == id; });
+	auto thrd_iter = find_if(_threads.begin(), _threads.end(), [&](auto& some_thread) {return some_thread->GetID() == id; });
 
-	if (t != _threads.end())
-		t->get()->ReceiveMessage();
+	if (thrd_iter != _threads.end())
+		thrd_iter->get()->Activate();
 	else
-		throw std::out_of_range("Error! Thread with ID = " + std::to_string(id) + " doesn't exist!");
+	{
+		std::string error_message("Error! Thread with ID = " + std::to_string(id) + " doesn't exist!");
+		throw std::exception(error_message.c_str());
+	}
 }
 
-void ThreadStorage::ActionLastThread()
-{
-	if (_threads.size() > 0)
-		_threads[_threads.size() - 1]->ReceiveMessage();
-}
 
 

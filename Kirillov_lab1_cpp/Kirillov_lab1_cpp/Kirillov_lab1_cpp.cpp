@@ -37,6 +37,7 @@ using namespace std;
 
 mutex data_mtx;       // будет синхронизировать доступ к отображаемой памяти
 mutex console_mtx;    // будет синхронизировать работу консоли
+HANDLE confirm_finish_of_thread_event = CreateEventA(NULL, FALSE, FALSE, NULL);  // будет сообщать о завершении потока
 
 void ReceiveAndProcessMessage(bool thread_type, int thread_id = 0)
 {
@@ -106,6 +107,7 @@ UINT ThreadFunction(LPVOID param)     // Функция для выполнен�
         {
             lock_guard<mutex> lock_console(console_mtx);
             cout << "Thread №" + to_string(thread_id) + " IS CLOSED" << endl;
+            SetEvent(confirm_finish_of_thread_event);
             return 0;
         }
         }
@@ -161,7 +163,7 @@ int main()
 
             HANDLE hControlEvents[4] = { create_thread_event, close_thread_event, message_event, close_programm_event };
 
-            ThreadStorage storage;
+            ThreadStorage threads_storage;
             SetEvent(confirm_event);   // подтвердение запуска приложения
 
             while (true)
@@ -175,7 +177,7 @@ int main()
                     std::unique_ptr<ThreadKirillov> t = std::make_unique<ThreadKirillov>();
                     
                     ParamsToThread p;
-                    p.id = storage.GetCount() + 1;
+                    p.id = threads_storage.GetCount() + 1;
                     p.control_event = CreateEventA(NULL, FALSE, FALSE, NULL);
                     p.receive_msg_event = CreateEventA(NULL, FALSE, FALSE, NULL);
                     if (p.control_event == NULL || p.receive_msg_event == NULL)
@@ -190,24 +192,26 @@ int main()
                         break;
                     }
                     
-                    storage.AddThread(std::move(t));
+                    threads_storage.AddThread(std::move(t));
                     SetEvent(confirm_event);
                 }
                 break;
 
                 case 1:              // Событие завершения потока
                 {
-                    if (storage.GetCount() > 0)
+                    if (threads_storage.GetCount() > 0)
                     {
-                        storage.FinishLastThread();
-                        storage.DeleteLastThread();
+                        threads_storage.FinishLastThread();
+                        WaitForSingleObject(confirm_finish_of_thread_event, INFINITE); // Ждём завершение потока
+                        threads_storage.DeleteLastThread();                            // Только после этого освобождаем ресурсы
                         SetEvent(confirm_event);
                     }
                     else      // Освобождаем все ресурсы, если нет активных потоков
                     {
                         SetEvent(close_programm_event);
-                        storage.DeleteAll();
+                        threads_storage.KillAndReleaseAll();
                         CloseAllObjects(kernel_objects);
+                        CloseHandle(confirm_finish_of_thread_event);
                         return 0;
                     }
                 }
@@ -215,7 +219,7 @@ int main()
 
                 case 2:
                 {
-                    header h = ReadHeader();    // читаем заголовок, чтобы узнать, какому потоку читать сообщение
+                    header h = ReadHeader();    // читаем заголовок, чтобы узнать, какой поток должен читать сообщение
                     if (h.message_size != 0)    
                     {
                         switch (h.thread_id)
@@ -223,7 +227,7 @@ int main()
                         case -1:                               // Чтение из всех потоков
                         {
                             ReceiveAndProcessMessage(_MAIN);
-                            storage.ActionAll();
+                            threads_storage.ActionAll();
                         }
                         break;
 
@@ -237,9 +241,9 @@ int main()
                         {
                             try
                             {
-                                storage.ActionThreadByID(h.thread_id);
+                                threads_storage.ActionThreadByID(h.thread_id);
                             }
-                            catch (exception ex)
+                            catch (exception ex)             // вдруг нет потока с данным id
                             {
                                 cout << ex.what() << endl;
                             }
@@ -254,8 +258,9 @@ int main()
                 case 3:      // Закрытие программы
                 {
                     SetEvent(close_programm_event);
-                    storage.DeleteAll();
+                    threads_storage.KillAndReleaseAll();
                     CloseAllObjects(kernel_objects);
+                    CloseHandle(confirm_finish_of_thread_event);
                     return 0;
                 }
                 }

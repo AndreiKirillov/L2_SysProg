@@ -8,22 +8,22 @@ class ThreadStorage
 private:
 	std::vector<std::unique_ptr<ThreadKirillov>> _threads;
 
-	std::vector<std::unique_ptr<ThreadKirillov>> _finished_threads;
+	ThreadStorage(ThreadStorage&);               // запрещаем копирование и присваивание
+	ThreadStorage(const ThreadStorage&);		 // сделав конструкторы приватными
+	ThreadStorage& operator=(ThreadStorage&);
 public:
 	ThreadStorage();
 
-	int GetCount();
+	int GetCount() const;
 
 	void AddThread(std::unique_ptr<ThreadKirillov>&& somethread);
 
 	void FinishLastThread();
-
 	void DeleteLastThread();
-	void DeleteAll();
+	void KillAndReleaseAll();
 
 	void ActionAll();
 	void ActionThreadByID(int id);
-	void ActionLastThread();
 
 };
 

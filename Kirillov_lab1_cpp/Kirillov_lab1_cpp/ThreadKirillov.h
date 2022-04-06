@@ -20,15 +20,11 @@ public:
 	~ThreadKirillov();
 
 	void SetID(int id);
-	int GetID();
+	int GetID() const;
 	
 	bool Create(AFX_THREADPROC thread_function, ParamsToThread param);
-	void SetActive();
+	void Finish();
 
-	void ReceiveMessage();
-
-	//bool Create(AFX_THREADPROC thread_function);
-	
-
+	void Activate();
 };
 

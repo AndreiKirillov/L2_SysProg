@@ -1,17 +1,22 @@
 #include "pch.h"
 #include "ThreadKirillov.h"
 
+extern std::mutex console_mtx;
+
 ThreadKirillov::ThreadKirillov(): _id(0), _thread(nullptr), _control_event(nullptr), _receive_msg_event(nullptr), _param()
 {
 }
 
 ThreadKirillov::~ThreadKirillov() // ¬ деструкторе освобождаем ресурсы потока
 {
-	std::cout <<"ID "<< std::to_string(_id)<< " DESTRUCTOR" << std::endl;
-	/*if(_thread != NULL)        
-		CloseHandle(_thread);*/
+	if(_thread != nullptr)        
+		CloseHandle(_thread);
 	if(_control_event != nullptr)
 		CloseHandle(_control_event);
+
+	console_mtx.lock();
+	std::cout << "ID " << std::to_string(_id) << " DESTRUCTOR" << std::endl;
+	console_mtx.unlock();
 }
 
 void ThreadKirillov::SetID(int id)
@@ -19,7 +24,7 @@ void ThreadKirillov::SetID(int id)
 	_id = id;
 }
 
-int ThreadKirillov::GetID()
+int ThreadKirillov::GetID() const
 {
 	return _id;
 }
@@ -37,36 +42,22 @@ bool ThreadKirillov::Create(AFX_THREADPROC thread_function, ParamsToThread param
 	CWinThread* new_thread = AfxBeginThread(thread_function, &_param);
 	if (new_thread == NULL)
 		return false;
+
 	_thread = new_thread->m_hThread;
 
 	return true;
 }
 
-void ThreadKirillov::SetActive() // ѕосылает сигнал дл€ активизации потока
+// ѕосылает сигнал дл€ закрыти€ потока
+void ThreadKirillov::Finish() 
 {
 	if(_control_event != nullptr)
 		SetEvent(_control_event);
 }
 
-void ThreadKirillov::ReceiveMessage()
+// ѕосылает сигнал дл€ начала выполнени€ работы
+void ThreadKirillov::Activate()
 {
 	if (_receive_msg_event != nullptr)
 		SetEvent(_receive_msg_event);
 }
-
-//bool ThreadKirillov::Create(AFX_THREADPROC thread_function)
-//{
-//	ParamsToThread p;
-//	p.id = _id;
-//	if(_control_event != nullptr)
-//		p.control_event = _control_event;
-//	else
-//	{
-//		_control_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-//		p.control_event = _control_event;
-//	}
-//
-//	_thread = AfxBeginThread(thread_function, &p)->m_hThread;
-//
-//	return true;
-//}

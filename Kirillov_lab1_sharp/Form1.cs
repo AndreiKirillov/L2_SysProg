@@ -32,7 +32,7 @@ namespace Kirillov_lab1_sharp
 
 
         private Process child_process = null;
-        private int count = 0;
+        private int count_threads = 0;
         private System.Threading.EventWaitHandle stopEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "CloseThread");
         private System.Threading.EventWaitHandle startEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "CreateNewThread");
         private System.Threading.EventWaitHandle confirmEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "ConfirmEvent");
@@ -49,7 +49,7 @@ namespace Kirillov_lab1_sharp
             if(child_process == null || child_process.HasExited)
             {
                 listbox_threads.Items.Clear();
-                count = 0;
+                count_threads = 0;
                 if (textBox_Nthreads.TextLength == 0)
                 {
                     MessageBox.Show("Внимание! Задайте количество создаваемых потоков!");
@@ -67,7 +67,7 @@ namespace Kirillov_lab1_sharp
                         {
                             startEvent.Set();
                             if(confirmEvent.WaitOne(-1))
-                                listbox_threads.Items.Add($"{++count}-й поток");
+                                listbox_threads.Items.Add($"{++count_threads}-й поток");
                         }
                     }
             }
@@ -85,7 +85,7 @@ namespace Kirillov_lab1_sharp
                     { 
                         startEvent.Set();
                         confirmEvent.WaitOne();
-                        listbox_threads.Items.Add($"{++count}-й поток");
+                        listbox_threads.Items.Add($"{++count_threads}-й поток");
                     }
                 }
             }
@@ -97,12 +97,12 @@ namespace Kirillov_lab1_sharp
             if (child_process != null)
             {
                 stopEvent.Set();
-                if(count == 0)
+                if(count_threads == 0)
                 {
                     if (closeProgrammEvent.WaitOne())
                     {
                         listbox_threads.Items.Clear();
-                        count = 0;
+                        count_threads = 0;
                         child_process.Close();
                         child_process = null;
                     }
@@ -111,8 +111,8 @@ namespace Kirillov_lab1_sharp
                 {
                     if (confirmEvent.WaitOne())
                     {
-                        listbox_threads.Items.RemoveAt(count + 1);
-                        --count;
+                        listbox_threads.Items.RemoveAt(count_threads + 1);
+                        --count_threads;
                     }
                 }
             }
